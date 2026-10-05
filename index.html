@@ -32,14 +32,21 @@
   </nav>
 </header>
 
-<section class="hero">
-  <h1>Encuentra tu próximo par</h1>
-  <p>Zapatillas originales con envío a toda Colombia</p>
+<section class="carrusel" id="carrusel" aria-label="Nuevos ingresos">
+  <div class="carrusel__pista" id="carrusel-pista">
+    <div class="carrusel__cargando">Chayron</div>
+  </div>
+  <div class="carrusel__puntos" id="carrusel-puntos"></div>
 </section>
 
 <main class="contenido">
 
-  <aside class="filtros">
+  <div class="filtros-fondo" id="filtros-fondo"></div>
+  <aside class="filtros" id="panel-filtros">
+    <div class="filtros__cabecera">
+      <strong>Filtros</strong>
+      <button type="button" id="btn-cerrar-filtros" aria-label="Cerrar filtros">✕</button>
+    </div>
     <h3>Género</h3>
     <div class="filtro-grupo" id="filtro-genero">
       <label><input type="checkbox" value="hombre" /> Hombre</label>
@@ -69,10 +76,12 @@
     </div>
 
     <button class="btn-limpiar-filtros" id="btn-limpiar">Limpiar filtros</button>
+    <button type="button" class="btn-aplicar-filtros" id="btn-aplicar-filtros">Ver resultados</button>
   </aside>
 
   <section class="resultados">
     <div class="barra-resultados">
+      <button type="button" class="btn-abrir-filtros" id="btn-abrir-filtros">☰ Filtros</button>
       <span class="barra-resultados__conteo" id="conteo-resultados">0 productos</span>
       <select class="orden-select" id="orden-select">
         <option value="relevancia">Más relevantes</option>
@@ -90,6 +99,12 @@
   </section>
 
 </main>
+
+<section class="envios" id="seccion-envios" hidden>
+  <h2>Envíos realizados</h2>
+  <p>Pedidos que ya llegaron a manos de nuestros clientes</p>
+  <div class="envios__tira" id="envios-tira"></div>
+</section>
 
 <footer class="footer">
   <p class="footer__redes-label">Síguenos en redes</p>

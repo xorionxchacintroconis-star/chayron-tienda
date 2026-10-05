@@ -113,13 +113,16 @@ function inicializarFiltros() {
 
   // Nav superior: filtros rápidos
   document.querySelectorAll('.header__nav a[data-categoria="hombre"]').forEach(a =>
-    a.addEventListener('click', (e) => { e.preventDefault(); estado.generos = ['hombre']; render(); window.scrollTo({top:0, behavior:'smooth'}); })
+    a.addEventListener('click', (e) => { e.preventDefault(); estado.generos = ['hombre']; render(); irAResultados(); })
   );
   document.querySelectorAll('.header__nav a[data-categoria="mujer"]').forEach(a =>
-    a.addEventListener('click', (e) => { e.preventDefault(); estado.generos = ['mujer']; render(); window.scrollTo({top:0, behavior:'smooth'}); })
+    a.addEventListener('click', (e) => { e.preventDefault(); estado.generos = ['mujer']; render(); irAResultados(); })
+  );
+  document.querySelectorAll('.header__nav a[data-categoria="todas"]').forEach(a =>
+    a.addEventListener('click', (e) => { e.preventDefault(); irAResultados(); })
   );
   document.querySelectorAll('.header__nav a[data-nuevo]').forEach(a =>
-    a.addEventListener('click', (e) => { e.preventDefault(); estado.soloNuevo = true; document.getElementById('filtro-nuevo').checked = true; render(); window.scrollTo({top:0, behavior:'smooth'}); })
+    a.addEventListener('click', (e) => { e.preventDefault(); estado.soloNuevo = true; document.getElementById('filtro-nuevo').checked = true; render(); irAResultados(); })
   );
 
   // Botones de WhatsApp fijos
@@ -211,6 +214,114 @@ function renderPaginacion(totalPaginas) {
   });
 }
 
+
+// ---------- Utilidades ----------
+function irAResultados() {
+  const el = document.querySelector('.resultados');
+  if (el) window.scrollTo({ top: el.offsetTop - 130, behavior: 'smooth' });
+}
+
+// ---------- Carrusel de nuevos ingresos ----------
+function elegirDestacados() {
+  const skus = CONFIG_TIENDA.carruselSkus || [];
+  const cantidad = CONFIG_TIENDA.carruselCantidad || 4;
+  let lista;
+  if (skus.length) {
+    lista = skus.map(s => PRODUCTOS.find(p => p.sku === s)).filter(Boolean);
+  } else {
+    // los más recientes (PRODUCTOS ya viene ordenado por fecha, nuevo primero)
+    lista = PRODUCTOS.filter(p => p.stock && p.imagen);
+  }
+  return lista.slice(0, cantidad);
+}
+
+function iniciarCarrusel() {
+  const seccion = document.getElementById('carrusel');
+  const pista = document.getElementById('carrusel-pista');
+  const puntos = document.getElementById('carrusel-puntos');
+  const destacados = elegirDestacados();
+
+  if (!destacados.length) { seccion.style.display = 'none'; return; }
+
+  pista.innerHTML = destacados.map((p, i) => `
+    <a class="carrusel__slide ${i === 0 ? 'activa' : ''}" href="detalle-producto.html?id=${p.id}">
+      <div class="carrusel__foto"><img src="${p.imagen}" alt="${p.nombre}" ${i === 0 ? '' : 'loading="lazy"'} /></div>
+      <div class="carrusel__texto">
+        <span class="carrusel__etiqueta">Nuevo ingreso</span>
+        <h2>${p.nombre}</h2>
+        <div class="carrusel__precio">${formatoPrecio(p.precio)}</div>
+        <span class="carrusel__boton">Ver modelo</span>
+      </div>
+    </a>
+  `).join('');
+
+  puntos.innerHTML = destacados.map((_, i) =>
+    `<button type="button" class="${i === 0 ? 'activo' : ''}" data-i="${i}" aria-label="Ir al modelo ${i + 1}"></button>`
+  ).join('');
+  if (destacados.length < 2) puntos.style.display = 'none';
+
+  const slides = [...pista.querySelectorAll('.carrusel__slide')];
+  const dots = [...puntos.querySelectorAll('button')];
+  let actual = 0;
+  let timer = null;
+  const ms = (CONFIG_TIENDA.carruselSegundos || 5) * 1000;
+
+  function mostrar(i) {
+    actual = (i + slides.length) % slides.length;
+    slides.forEach((s, k) => s.classList.toggle('activa', k === actual));
+    dots.forEach((d, k) => d.classList.toggle('activo', k === actual));
+  }
+  function arrancar() {
+    if (slides.length < 2) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    detener();
+    timer = setInterval(() => mostrar(actual + 1), ms);
+  }
+  function detener() { if (timer) clearInterval(timer); timer = null; }
+
+  dots.forEach(d => d.addEventListener('click', () => { mostrar(Number(d.dataset.i)); arrancar(); }));
+  seccion.addEventListener('mouseenter', detener);
+  seccion.addEventListener('mouseleave', arrancar);
+
+  // deslizar con el dedo
+  let x0 = null;
+  seccion.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; detener(); }, { passive: true });
+  seccion.addEventListener('touchend', e => {
+    if (x0 !== null) {
+      const dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 40) { mostrar(actual + (dx < 0 ? 1 : -1)); }
+    }
+    x0 = null;
+    arrancar();
+  });
+
+  document.addEventListener('visibilitychange', () => document.hidden ? detener() : arrancar());
+  arrancar();
+}
+
+// ---------- Filtros en celular (panel que se abre) ----------
+function iniciarPanelFiltros() {
+  const panel = document.getElementById('panel-filtros');
+  const fondo = document.getElementById('filtros-fondo');
+  const abrir = () => { panel.classList.add('abierto'); fondo.classList.add('abierto'); document.body.classList.add('sin-scroll'); };
+  const cerrar = () => { panel.classList.remove('abierto'); fondo.classList.remove('abierto'); document.body.classList.remove('sin-scroll'); };
+  document.getElementById('btn-abrir-filtros').addEventListener('click', abrir);
+  document.getElementById('btn-cerrar-filtros').addEventListener('click', cerrar);
+  document.getElementById('btn-aplicar-filtros').addEventListener('click', () => { cerrar(); irAResultados(); });
+  fondo.addEventListener('click', cerrar);
+}
+
+// ---------- Envíos realizados ----------
+function iniciarEnvios() {
+  const fotos = CONFIG_TIENDA.enviosFotos || [];
+  if (!fotos.length) return;
+  const sec = document.getElementById('seccion-envios');
+  document.getElementById('envios-tira').innerHTML = fotos.map(f =>
+    `<img src="envios/${f}" alt="Envío realizado" loading="lazy" />`
+  ).join('');
+  sec.hidden = false;
+}
+
 // ---------- Inicio ----------
 document.addEventListener('DOMContentLoaded', async () => {
   document.title = `${CONFIG_TIENDA.nombre} | Tienda de Zapatillas`;
@@ -223,9 +334,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   } catch (err) {
     console.error(err);
     grid.innerHTML = `<p style="grid-column:1/-1; text-align:center; padding:40px 0; color:#c0392b;">No se pudieron cargar los productos. Intenta recargar la página.</p>`;
+    document.getElementById('carrusel').style.display = 'none';
     return;
   }
 
   inicializarFiltros();
+  iniciarPanelFiltros();
+  iniciarCarrusel();
+  iniciarEnvios();
   render();
 });
