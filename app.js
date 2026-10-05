@@ -198,11 +198,19 @@ function renderPaginacion(totalPaginas) {
   const cont = document.getElementById('paginacion');
   if (totalPaginas <= 1) { cont.innerHTML = ''; return; }
 
-  let html = `<button ${estado.pagina === 1 ? 'disabled' : ''} data-pagina="${estado.pagina - 1}">‹</button>`;
-  for (let i = 1; i <= totalPaginas; i++) {
-    html += `<button class="${i === estado.pagina ? 'activo' : ''}" data-pagina="${i}">${i}</button>`;
-  }
-  html += `<button ${estado.pagina === totalPaginas ? 'disabled' : ''} data-pagina="${estado.pagina + 1}">›</button>`;
+  // Solo se muestran unas pocas páginas: 1 … 4 5 6 … 28
+  const p = estado.pagina;
+  const nums = new Set([1, totalPaginas, p - 1, p, p + 1]);
+  const visibles = [...nums].filter(n => n >= 1 && n <= totalPaginas).sort((a, b) => a - b);
+
+  let html = `<button ${p === 1 ? 'disabled' : ''} data-pagina="${p - 1}">‹</button>`;
+  let previo = 0;
+  visibles.forEach(n => {
+    if (n - previo > 1) html += `<span class="paginacion__puntos">…</span>`;
+    html += `<button class="${n === p ? 'activo' : ''}" data-pagina="${n}">${n}</button>`;
+    previo = n;
+  });
+  html += `<button ${p === totalPaginas ? 'disabled' : ''} data-pagina="${p + 1}">›</button>`;
   cont.innerHTML = html;
 
   cont.querySelectorAll('button[data-pagina]').forEach(btn => {
