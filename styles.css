@@ -17,6 +17,7 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html, body { overflow-x: hidden; }
 body {
   font-family: var(--fuente);
   color: var(--color-primario);
@@ -59,7 +60,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   color: #fff;
 }
 
-.logo img { height: 44px; width: auto; }
+.logo img { height: 50px; width: auto; }
 
 .search-bar {
   flex: 1;
@@ -120,7 +121,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   overflow-x: auto;
 }
 
-.header__nav a { color: #9a9ea5; padding: 4px 0; }
+.header__nav a { color: #9a9ea5; padding: 4px 0; white-space: nowrap; }
 .header__nav a.activo, .header__nav a:hover { color: #fff; border-bottom: 2px solid var(--color-plata); }
 
 /* ===== Carrusel de nuevos ingresos ===== */
@@ -404,6 +405,7 @@ body.sin-scroll { overflow: hidden; }
 }
 
 .paginacion button.activo { background: var(--color-negro); color: #fff; border-color: var(--color-negro); }
+.paginacion__puntos { color: var(--color-texto-suave); padding: 0 2px; }
 .paginacion button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ===== Footer ===== */
@@ -554,7 +556,8 @@ body.sin-scroll { overflow: hidden; }
 
 /* ===== Responsive ===== */
 @media (max-width: 860px) {
-  .contenido { grid-template-columns: 1fr; padding: 16px 14px; gap: 14px; }
+  .contenido { grid-template-columns: minmax(0, 1fr); padding: 16px 14px; gap: 14px; }
+  .resultados { min-width: 0; }
   .detalle { grid-template-columns: 1fr; }
 
   /* Cabecera compacta: logo + WhatsApp arriba, buscador debajo */
