@@ -222,14 +222,39 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .envios { max-width: 1100px; margin: 40px auto 0; padding: 0 24px; text-align: center; }
 .envios h2 { font-size: 22px; margin-bottom: 4px; }
 .envios p { font-size: 13.5px; color: var(--color-texto-suave); margin-bottom: 16px; }
+.envios h3 { font-size: 14px; font-weight: 700; margin: 22px 0 10px; text-align: left; color: #333; }
 .envios__tira {
   display: flex; gap: 12px; overflow-x: auto;
   scroll-snap-type: x mandatory; padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
 }
-.envios__tira img {
-  flex: 0 0 auto; height: 220px; width: auto;
+.envios__tira img, .envios__video {
+  flex: 0 0 auto; height: 260px; width: auto;
   border-radius: var(--radio); border: 1px solid var(--color-borde);
-  scroll-snap-align: start;
+  scroll-snap-align: start; cursor: zoom-in; background: #111;
+}
+.envios__video { position: relative; padding: 0; overflow: hidden; cursor: pointer; }
+.envios__video img { height: 100%; border: 0; border-radius: 0; cursor: pointer; }
+.envios__play {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(11,12,15,.7); color: #fff; font-size: 20px;
+  display: flex; align-items: center; justify-content: center; padding-left: 4px;
+}
+
+/* Visor (ampliar foto o video) */
+.visor {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.88);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.visor[hidden] { display: none; }
+.visor__contenido img, .visor__contenido video {
+  max-width: 100%; max-height: 88vh; border-radius: 10px; background: #000;
+}
+.visor__cerrar {
+  position: absolute; top: 10px; right: 14px; color: #fff;
+  font-size: 34px; line-height: 1; padding: 6px 12px;
 }
 
 body.sin-scroll { overflow: hidden; }
@@ -649,6 +674,6 @@ body.sin-scroll { overflow: hidden; }
   .badge-nuevo { top: 8px; left: 8px; font-size: 10px; padding: 3px 8px; }
 
   .envios { padding: 0 14px; margin-top: 28px; }
-  .envios__tira img { height: 170px; }
+  .envios__tira img, .envios__video { height: 230px; }
   .footer { margin-top: 32px; }
 }

@@ -102,9 +102,21 @@
 
 <section class="envios" id="seccion-envios" hidden>
   <h2>Envíos realizados</h2>
-  <p>Pedidos que ya llegaron a manos de nuestros clientes</p>
-  <div class="envios__tira" id="envios-tira"></div>
+  <p>Pedidos reales que ya llegaron a manos de nuestros clientes</p>
+  <div id="envios-videos-bloque" hidden>
+    <h3>Así preparamos tu pedido</h3>
+    <div class="envios__tira" id="envios-videos"></div>
+  </div>
+  <div id="envios-fotos-bloque" hidden>
+    <h3>Clientes que ya recibieron</h3>
+    <div class="envios__tira" id="envios-tira"></div>
+  </div>
 </section>
+
+<div class="visor" id="visor" hidden>
+  <button class="visor__cerrar" id="visor-cerrar" aria-label="Cerrar">×</button>
+  <div class="visor__contenido" id="visor-contenido"></div>
+</div>
 
 <footer class="footer">
   <p class="footer__redes-label">Síguenos en redes</p>

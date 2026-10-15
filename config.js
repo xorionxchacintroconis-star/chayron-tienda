@@ -17,8 +17,9 @@ const CONFIG_TIENDA = {
   carruselSegundos: 5,        // cada cuántos segundos cambia
 
   // --- Sección "Envíos realizados" ---
-  // Sube las fotos a una carpeta "envios" en el repositorio y escribe aquí sus nombres.
-  // Mientras esta lista esté vacía, la sección NO se muestra.
-  // Ej: ['envio-1.jpg', 'envio-2.jpg', 'envio-3.jpg']
-  enviosFotos: [],
+  // Mientras ambas listas estén vacías, la sección NO se muestra.
+  // Las fotos y videos se suben al repositorio junto a index.html.
+  enviosFotos: ['envio-1.jpg','envio-2.jpg','envio-3.jpg','envio-4.jpg','envio-5.jpg','envio-6.jpg','envio-7.jpg'],
+  // Videos: solo el nombre sin extensión. Se usan nombre.mp4 (video) y nombre.jpg (portada)
+  enviosVideos: ['video-1','video-2','video-3'],
 };

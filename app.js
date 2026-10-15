@@ -320,14 +320,48 @@ function iniciarPanelFiltros() {
 }
 
 // ---------- Envíos realizados ----------
+function abrirVisor(html) {
+  document.getElementById('visor-contenido').innerHTML = html;
+  document.getElementById('visor').hidden = false;
+  document.body.classList.add('sin-scroll');
+}
+function cerrarVisor() {
+  const v = document.getElementById('visor');
+  if (v.hidden) return;
+  document.getElementById('visor-contenido').innerHTML = '';
+  v.hidden = true;
+  document.body.classList.remove('sin-scroll');
+}
+
 function iniciarEnvios() {
   const fotos = CONFIG_TIENDA.enviosFotos || [];
-  if (!fotos.length) return;
-  const sec = document.getElementById('seccion-envios');
-  document.getElementById('envios-tira').innerHTML = fotos.map(f =>
-    `<img src="envios/${f}" alt="Envío realizado" loading="lazy" />`
-  ).join('');
-  sec.hidden = false;
+  const videos = CONFIG_TIENDA.enviosVideos || [];
+  if (!fotos.length && !videos.length) return;
+
+  if (videos.length) {
+    document.getElementById('envios-videos').innerHTML = videos.map(v =>
+      `<button type="button" class="envios__video" data-video="${v}.mp4" aria-label="Ver video">
+         <img src="${v}.jpg" alt="Video de envíos" loading="lazy" /><span class="envios__play">▶</span>
+       </button>`).join('');
+    document.getElementById('envios-videos-bloque').hidden = false;
+  }
+  if (fotos.length) {
+    document.getElementById('envios-tira').innerHTML = fotos.map(f =>
+      `<img src="${f}" alt="Envío realizado" loading="lazy" data-foto="${f}" />`).join('');
+    document.getElementById('envios-fotos-bloque').hidden = false;
+  }
+  document.getElementById('seccion-envios').hidden = false;
+
+  document.getElementById('seccion-envios').addEventListener('click', (e) => {
+    const vid = e.target.closest('[data-video]');
+    if (vid) return abrirVisor(`<video src="${vid.dataset.video}" controls autoplay playsinline loop></video>`);
+    const img = e.target.closest('img[data-foto]');
+    if (img) abrirVisor(`<img src="${img.dataset.foto}" alt="Envío realizado" />`);
+  });
+  document.getElementById('visor').addEventListener('click', (e) => {
+    if (e.target.tagName !== 'VIDEO' && e.target.tagName !== 'IMG') cerrarVisor();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarVisor(); });
 }
 
 // ---------- Inicio ----------
