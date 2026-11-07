@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex, nofollow" />
   <title>Panel Chayron</title>
+  <link rel="manifest" href="/manifest-panel.webmanifest" />
+  <meta name="theme-color" content="#0b0c0f" />
+  <link rel="apple-touch-icon" href="/icono-panel-192.png" />
   <style>
     :root { --negro:#0b0c0f; --plata:#9fb0c3; --borde:#e5e5e5; --suave:#6b6b6b; --ok:#1f9d55; --mal:#c0392b; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -195,6 +198,8 @@ async function cargarMarcas() {
   const cat = $('categoria').value;
   const marcas = [...new Set(todos.filter(p => (p.categoria || 'zapatillas') === cat).map(p => p.marca).filter(Boolean))].sort();
   $('marca').innerHTML = marcas.map(m => `<option>${m}</option>`).join('') + '<option value="__otra">+ Otra marca...</option>';
+  // si no hay marcas en esta categoría, queda en "Otra marca": mostrar el cuadro para escribirla
+  $('marca-otra').classList.toggle('oculto', $('marca').value !== '__otra');
 }
 function ajustarFormulario() {
   const reloj = $('categoria').value !== 'zapatillas';
@@ -366,6 +371,8 @@ $('btn-entrar').addEventListener('click', entrar);
 $('clave').addEventListener('keydown', e => { if (e.key === 'Enter') entrar(); });
 $('btn-salir').addEventListener('click', salir);
 $('btn-publicar').addEventListener('click', publicar);
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw-panel.js', { scope: '/admin.html' }).catch(() => {});
 
 (async () => {
   const s = leerSesion();
