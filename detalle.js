@@ -67,15 +67,18 @@ async function renderDetalle() {
       <div class="detalle__precio">${formatoPrecio(producto.precio)}</div>
 
       ${opciones.length ? `
-        <div class="detalle__tallas-label">${etiquetaOpcion}</div>
+        <div class="detalle__tallas-label" id="etiqueta-opcion">${etiquetaOpcion}</div>
         <div class="detalle__tallas" id="tallas-contenedor">
           ${opciones.map((t, i) => `<button type="button" class="${esCalzado ? '' : 'color'}" data-talla="${t}" data-i="${i}">${t}</button>`).join('')}
         </div>` : '<div id="tallas-contenedor"></div>'}
 
-      ${producto.stock
-        ? `<a class="btn-comprar" id="btn-comprar" href="${linkWhatsapp(producto)}" target="_blank">💬 Comprar por WhatsApp</a>`
-        : `<div class="badge-sin-stock" style="position:static; padding:14px; border-radius:10px;">Producto agotado</div>`
-      }
+      <div class="detalle__compra">
+        <div class="detalle__compra-precio">${formatoPrecio(producto.precio)}</div>
+        ${producto.stock
+          ? `<a class="btn-comprar" id="btn-comprar" href="${linkWhatsapp(producto)}" target="_blank">💬 Comprar por WhatsApp</a>`
+          : `<div class="badge-sin-stock" style="position:static; padding:14px; border-radius:10px; flex:1; text-align:center;">Producto agotado</div>`
+        }
+      </div>
     </div>
   `;
 
@@ -98,6 +101,24 @@ async function renderDetalle() {
     const flechaDer = document.getElementById('flecha-der');
     if (flechaIzq) flechaIzq.addEventListener('click', () => mostrarImagen(indiceActual - 1));
     if (flechaDer) flechaDer.addEventListener('click', () => mostrarImagen(indiceActual + 1));
+  }
+
+  document.body.classList.add('pagina-detalle');
+
+  // Si no eligió talla/color, el primer toque lo lleva a elegir (el segundo toque sigue igual al WhatsApp)
+  let avisado = false;
+  const btnComprarEl = document.getElementById('btn-comprar');
+  if (btnComprarEl && opciones.length) {
+    btnComprarEl.addEventListener('click', (e) => {
+      if (!cont.querySelector('#tallas-contenedor button.seleccionada') && !avisado) {
+        e.preventDefault();
+        avisado = true;
+        const et = document.getElementById('etiqueta-opcion');
+        et.textContent = esCalzado ? '👇 Elige tu talla y vuelve a tocar el botón' : '👇 Elige tu color y vuelve a tocar el botón';
+        et.classList.add('detalle__aviso');
+        et.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
   }
 
   let tallaSeleccionada = null;

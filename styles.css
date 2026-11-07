@@ -685,3 +685,26 @@ body.sin-scroll { overflow: hidden; }
 .tabs-categoria button.activo { background:#0b0c0f; color:#fff; border-color:#0b0c0f; }
 .header__nav a[hidden] { display:none; }
 .detalle__tallas button.color { min-width:auto; padding:10px 16px; }
+
+/* ---------- Botón de compra siempre visible ---------- */
+.detalle__compra { display:flex; align-items:center; gap:12px; }
+.detalle__compra-precio { display:none; }
+.detalle__aviso { color:#b42318; background:#fdecea; padding:9px 12px; border-radius:9px; }
+
+@media (max-width: 860px) {
+  .detalle { padding: 14px 14px 24px; gap: 18px; }
+  /* la foto no ocupa toda la pantalla: así se ve el nombre y el precio sin bajar tanto */
+  .detalle__imagen-principal-cont img { max-height: 58vh; object-fit: contain; background: #f4f4f5; }
+  .detalle__nombre { font-size: 22px; margin: 4px 0 8px; }
+  .detalle__precio { display: none; } /* el precio va en la barra de abajo */
+
+  .detalle__compra {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    background: #fff; border-top: 1px solid var(--color-borde);
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 18px rgba(0,0,0,.08);
+  }
+  .detalle__compra-precio { display:block; font-weight:800; font-size:15px; line-height:1.15; white-space:nowrap; }
+  .detalle__compra .btn-comprar { flex:1; width:auto; padding:14px 8px; font-size:14px; white-space:nowrap; }
+  body.pagina-detalle { padding-bottom: 76px; }
+}
