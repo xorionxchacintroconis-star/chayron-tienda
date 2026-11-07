@@ -63,6 +63,12 @@
     <div class="caja">
       <h2>Publicar un modelo nuevo</h2>
 
+      <label for="categoria">¿Qué vas a publicar?</label>
+      <select id="categoria">
+        <option value="zapatillas">Zapatillas</option>
+        <option value="relojes">Reloj</option>
+      </select>
+
       <label for="marca">Marca</label>
       <select id="marca"></select>
       <input type="text" id="marca-otra" placeholder="Escribe la marca nueva" class="oculto" style="margin-top:8px" />
@@ -73,7 +79,7 @@
       <label for="precio">Precio en pesos <small>(solo números, ej: 175000)</small></label>
       <input type="text" id="precio" inputmode="numeric" placeholder="175000" />
 
-      <div class="fila">
+      <div class="fila" id="bloque-tallas">
         <div>
           <label for="tallas-dama">Tallas dama <small>(opcional)</small></label>
           <input type="text" id="tallas-dama" placeholder="36 37 38 39" />
@@ -84,7 +90,12 @@
         </div>
       </div>
 
-      <label for="fotos">Fotos <small>(la primera será la portada)</small></label>
+      <div id="bloque-colores" class="oculto">
+        <label for="colores">Colores <small>(sepáralos con coma, en el mismo orden de las fotos)</small></label>
+        <input type="text" id="colores" placeholder="Negro, Blanco, Verde, Azul, Celeste" />
+      </div>
+
+      <label for="fotos">Fotos <small id="nota-fotos">(la primera será la portada)</small></label>
       <input type="file" id="fotos" accept="image/*" multiple />
       <div class="previas" id="previas"></div>
 
@@ -181,9 +192,19 @@ async function cargarTodos() {
 }
 async function cargarMarcas() {
   if (!todos.length) await cargarTodos();
-  const marcas = [...new Set(todos.map(p => p.marca).filter(Boolean))].sort();
+  const cat = $('categoria').value;
+  const marcas = [...new Set(todos.filter(p => (p.categoria || 'zapatillas') === cat).map(p => p.marca).filter(Boolean))].sort();
   $('marca').innerHTML = marcas.map(m => `<option>${m}</option>`).join('') + '<option value="__otra">+ Otra marca...</option>';
 }
+function ajustarFormulario() {
+  const reloj = $('categoria').value !== 'zapatillas';
+  $('bloque-tallas').classList.toggle('oculto', reloj);
+  $('bloque-colores').classList.toggle('oculto', !reloj);
+  $('modelo').placeholder = reloj ? 'Ej: Aqua Cronógrafo' : 'Ej: Nike P-6000 Azul y Plateado';
+  $('nota-fotos').textContent = reloj ? '(una foto por color, en el mismo orden de los colores; la primera es la portada)' : '(la primera será la portada)';
+  cargarMarcas();
+}
+$('categoria').addEventListener('change', ajustarFormulario);
 $('marca').addEventListener('change', () => {
   $('marca-otra').classList.toggle('oculto', $('marca').value !== '__otra');
 });
@@ -193,27 +214,52 @@ function siguienteSku() {
   const n = (nums.length ? Math.max(...nums) : 0) + 1;
   return 'CHY-' + String(n).padStart(3, '0');
 }
+function coloresTexto(t) {
+  return t.split(/[,\/\n]+/).map(x => x.trim()).filter(Boolean).join(' / ');
+}
 function tallasTexto(t) {
   return t.split(/[\s,\/\-]+/).map(x => x.trim()).filter(Boolean).join(' / ');
 }
 
 // ---------- Fotos ----------
-$('fotos').addEventListener('change', () => {
-  $('previas').innerHTML = [...$('fotos').files].map(f => `<img src="${URL.createObjectURL(f)}" />`).join('');
+// Se copian a la memoria apenas se eligen, para que el celular no las "pierda"
+let fotosListas = [];
+$('fotos').addEventListener('change', async () => {
+  const archivos = [...$('fotos').files];
+  fotosListas = [];
+  $('previas').innerHTML = '';
+  if (!archivos.length) return;
+  mostrar('msg-pub', 'info', 'Preparando fotos...');
+  try {
+    for (const f of archivos) {
+      const datos = await f.arrayBuffer();
+      fotosListas.push(new Blob([datos], { type: f.type || 'image/jpeg' }));
+    }
+    $('previas').innerHTML = fotosListas.map(b => `<img src="${URL.createObjectURL(b)}" />`).join('');
+    limpiar('msg-pub');
+  } catch (e) {
+    fotosListas = [];
+    mostrar('msg-pub', 'mal', 'No se pudieron leer las fotos. Vuelve a elegirlas.');
+  }
 });
-function achicar(archivo, maximo = 1400, calidad = 0.85) {
-  return new Promise((ok, fallo) => {
-    const img = new Image();
-    img.onload = () => {
-      const k = Math.min(1, maximo / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      c.toBlob(b => b ? ok(b) : fallo(new Error('No se pudo procesar una foto')), 'image/jpeg', calidad);
-    };
-    img.onerror = () => fallo(new Error('Una foto no se pudo leer'));
-    img.src = URL.createObjectURL(archivo);
-  });
+async function achicar(blob, maximo = 1400, calidad = 0.85) {
+  let fuente;
+  if (window.createImageBitmap) {
+    try { fuente = await createImageBitmap(blob); } catch (e) { fuente = null; }
+  }
+  if (!fuente) {
+    fuente = await new Promise((ok, fallo) => {
+      const img = new Image(); const url = URL.createObjectURL(blob);
+      img.onload = () => ok(img);
+      img.onerror = () => fallo(new Error('Una foto no se pudo leer. Vuelve a elegir las fotos.'));
+      img.src = url;
+    });
+  }
+  const k = Math.min(1, maximo / Math.max(fuente.width, fuente.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(fuente.width * k); c.height = Math.round(fuente.height * k);
+  c.getContext('2d').drawImage(fuente, 0, 0, c.width, c.height);
+  return new Promise((ok, fallo) => c.toBlob(b => b ? ok(b) : fallo(new Error('No se pudo procesar una foto')), 'image/jpeg', calidad));
 }
 async function subirFoto(nombre, blob) {
   await api(`${BASE}/storage/v1/object/${BUCKET}/${nombre}`, {
@@ -230,13 +276,16 @@ async function publicar() {
   const marca = ($('marca').value === '__otra' ? $('marca-otra').value : $('marca').value).trim();
   const modelo = $('modelo').value.trim();
   const precio = parseInt($('precio').value.replace(/\D/g, ''), 10);
-  const dama = tallasTexto($('tallas-dama').value);
-  const cab = tallasTexto($('tallas-cab').value);
-  const fotos = [...$('fotos').files];
+  const categoria = $('categoria').value;
+  const calzado = categoria === 'zapatillas';
+  const dama = calzado ? tallasTexto($('tallas-dama').value) : '';
+  const cab = calzado ? tallasTexto($('tallas-cab').value) : '';
+  const colores = calzado ? '' : coloresTexto($('colores').value);
+  const fotos = fotosListas;
 
   if (!marca || !modelo) return mostrar('msg-pub', 'mal', 'Falta la marca o el modelo');
   if (!precio || precio < 1000) return mostrar('msg-pub', 'mal', 'Escribe el precio completo, por ejemplo 175000');
-  if (!dama && !cab) return mostrar('msg-pub', 'mal', 'Escribe al menos unas tallas');
+  if (calzado && !dama && !cab) return mostrar('msg-pub', 'mal', 'Escribe al menos unas tallas');
   if (!fotos.length) return mostrar('msg-pub', 'mal', 'Elige al menos una foto');
 
   $('btn-publicar').disabled = true;
@@ -254,14 +303,15 @@ async function publicar() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify({
-        sku, marca, modelo, categoria: 'zapatillas',
-        tallas_dama: dama || null, tallas_caballero: cab || null, tallas_sin_genero: null,
+        sku, marca, modelo, categoria,
+        tallas_dama: dama || null, tallas_caballero: cab || null, tallas_sin_genero: colores || null,
         precio_soles: precio, stock: true,
         imagen_url: urls[0], imagenes_url: urls.join(','),
       }),
     });
     mostrar('msg-pub', 'ok', `Listo, publicado como ${sku}. Ya se ve en la tienda.`);
-    ['modelo', 'precio', 'tallas-dama', 'tallas-cab', 'fotos'].forEach(id => $(id).value = '');
+    ['modelo', 'precio', 'tallas-dama', 'tallas-cab', 'colores', 'fotos'].forEach(id => $(id).value = '');
+    fotosListas = [];
     $('previas').innerHTML = '';
     await cargarMarcas(); await cargarLista();
   } catch (e) {
@@ -277,7 +327,7 @@ async function cargarLista() {
   $('lista').innerHTML = todos.slice(0, 30).map(p => `
     <div class="prod">
       <img src="${p.imagen_url || ''}" alt="" loading="lazy" />
-      <div class="prod__info"><b>${p.modelo}</b>${p.sku} · ${cop(p.precio_soles)}${p.stock ? '' : ' · <span class="agotado">AGOTADO</span>'}</div>
+      <div class="prod__info"><b>${p.modelo}</b>${p.sku}${(p.categoria || 'zapatillas') === 'zapatillas' ? '' : ' · ' + p.categoria} · ${cop(p.precio_soles)}${p.stock ? '' : ' · <span class="agotado">AGOTADO</span>'}</div>
       <div class="prod__acciones">
         <button data-a="stock" data-id="${p.id}">${p.stock ? 'Marcar agotado' : 'Hay stock'}</button>
         <button data-a="precio" data-id="${p.id}">Cambiar precio</button>

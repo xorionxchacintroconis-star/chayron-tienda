@@ -8,6 +8,7 @@ let PRODUCTOS = [];
 
 let estado = {
   busqueda: '',
+  categoria: '',
   generos: [],
   marcas: [],
   tallas: [],
@@ -90,7 +91,7 @@ function inicializarFiltros() {
   });
 
   document.getElementById('btn-limpiar').addEventListener('click', () => {
-    estado = { busqueda: '', generos: [], marcas: [], tallas: [], precioMax: maxPrecio, soloNuevo: false, orden: 'relevancia', pagina: 1 };
+    estado = { busqueda: '', categoria: '', generos: [], marcas: [], tallas: [], precioMax: maxPrecio, soloNuevo: false, orden: 'relevancia', pagina: 1 };
     document.querySelectorAll('.filtros input[type="checkbox"]').forEach(c => c.checked = false);
     document.querySelectorAll('.filtro-tallas button').forEach(b => b.classList.remove('activo'));
     inputPrecio.value = maxPrecio;
@@ -125,6 +126,9 @@ function inicializarFiltros() {
     a.addEventListener('click', (e) => { e.preventDefault(); estado.soloNuevo = true; document.getElementById('filtro-nuevo').checked = true; render(); irAResultados(); })
   );
 
+  // Categorías (Zapatillas / Relojes...): solo aparecen si hay más de una
+  iniciarCategorias();
+
   // Botones de WhatsApp fijos
   document.getElementById('btn-whatsapp-header').href = linkWhatsapp();
   document.getElementById('btn-whatsapp-footer').href = linkWhatsapp();
@@ -134,10 +138,50 @@ function inicializarFiltros() {
   document.getElementById('link-facebook').href = CONFIG_TIENDA.facebook;
 }
 
+// ---------- Categorías ----------
+const NOMBRES_CATEGORIA = { zapatillas: 'Zapatillas', relojes: 'Relojes', lentes: 'Lentes', ropa: 'Ropa', accesorios: 'Accesorios' };
+
+function elegirCategoria(cat) {
+  estado.categoria = cat;
+  estado.pagina = 1;
+  // Género y talla solo tienen sentido para zapatillas
+  const soloCalzado = !cat || cat === 'zapatillas';
+  document.getElementById('bloque-genero').style.display = soloCalzado ? '' : 'none';
+  document.getElementById('bloque-talla').style.display = soloCalzado ? '' : 'none';
+  if (!soloCalzado) {
+    estado.generos = []; estado.tallas = [];
+    document.querySelectorAll('#filtro-genero input').forEach(c => c.checked = false);
+    document.querySelectorAll('#filtro-talla button').forEach(b => b.classList.remove('activo'));
+  }
+  document.querySelectorAll('#tabs-categoria button').forEach(b => b.classList.toggle('activo', b.dataset.cat === cat));
+  render();
+}
+
+function iniciarCategorias() {
+  const cats = [...new Set(PRODUCTOS.map(p => p.categoria))];
+  if (cats.length < 2) return;
+  const orden = ['zapatillas', ...cats.filter(c => c !== 'zapatillas').sort()];
+  const tabs = document.getElementById('tabs-categoria');
+  tabs.innerHTML = `<button type="button" data-cat="" class="activo">Todo</button>` +
+    orden.filter(c => cats.includes(c)).map(c =>
+      `<button type="button" data-cat="${c}">${NOMBRES_CATEGORIA[c] || c}</button>`).join('');
+  tabs.hidden = false;
+  tabs.addEventListener('click', e => {
+    const b = e.target.closest('button[data-cat]');
+    if (b) elegirCategoria(b.dataset.cat);
+  });
+  const navRel = document.getElementById('nav-relojes');
+  if (navRel && cats.includes('relojes')) {
+    navRel.hidden = false;
+    navRel.addEventListener('click', e => { e.preventDefault(); elegirCategoria('relojes'); irAResultados(); });
+  }
+}
+
 // ---------- Filtrado + orden ----------
 function obtenerProductosFiltrados() {
   let lista = PRODUCTOS.filter(p => {
     if (estado.busqueda && !(`${p.nombre} ${p.marca}`.toLowerCase().includes(estado.busqueda))) return false;
+    if (estado.categoria && p.categoria !== estado.categoria) return false;
     if (estado.generos.length && !estado.generos.includes(p.genero)) return false;
     if (estado.marcas.length && !estado.marcas.includes(p.marca)) return false;
     if (estado.tallas.length && !estado.tallas.some(t => p.tallas.includes(t))) return false;
@@ -188,7 +232,9 @@ function tarjetaProducto(p) {
         <div class="tarjeta-producto__marca">${p.marca}</div>
         <div class="tarjeta-producto__nombre">${p.nombre}</div>
         <div class="tarjeta-producto__precio">${formatoPrecio(p.precio)}</div>
-        <div class="tarjeta-producto__tallas">Tallas: ${p.tallas.join(', ')}</div>
+        ${p.categoria === 'zapatillas'
+          ? `<div class="tarjeta-producto__tallas">Tallas: ${p.tallas.join(', ')}</div>`
+          : (p.colores.length > 1 ? `<div class="tarjeta-producto__tallas">${p.colores.length} colores</div>` : '')}
       </div>
     </a>
   `;

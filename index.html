@@ -15,7 +15,7 @@
     </a>
     <div class="search-bar">
       <span class="icono-buscar">🔍</span>
-      <input type="text" id="buscador" placeholder="Buscar zapatillas, marca, modelo..." />
+      <input type="text" id="buscador" placeholder="Buscar zapatillas, relojes, marca, modelo..." />
     </div>
     <div class="header__acciones">
       <a class="btn-whatsapp" id="btn-whatsapp-header" href="#" target="_blank">
@@ -28,6 +28,7 @@
     <a href="#" data-categoria="todas">Catálogo</a>
     <a href="#" data-categoria="hombre">Hombre</a>
     <a href="#" data-categoria="mujer">Mujer</a>
+    <a href="#" data-cat="relojes" id="nav-relojes" hidden>Relojes</a>
     <a href="#" data-nuevo="1">Nuevos ingresos</a>
   </nav>
 </header>
@@ -47,11 +48,13 @@
       <strong>Filtros</strong>
       <button type="button" id="btn-cerrar-filtros" aria-label="Cerrar filtros">✕</button>
     </div>
+    <div id="bloque-genero">
     <h3>Género</h3>
     <div class="filtro-grupo" id="filtro-genero">
       <label><input type="checkbox" value="hombre" /> Hombre</label>
       <label><input type="checkbox" value="mujer" /> Mujer</label>
       <label><input type="checkbox" value="unisex" /> Unisex</label>
+    </div>
     </div>
 
     <h3>Marca</h3>
@@ -59,9 +62,11 @@
       <!-- se llena dinámicamente desde app.js -->
     </div>
 
+    <div id="bloque-talla">
     <h3>Talla</h3>
     <div class="filtro-tallas" id="filtro-talla">
       <!-- se llena dinámicamente desde app.js -->
+    </div>
     </div>
 
     <h3>Precio</h3>
@@ -80,6 +85,7 @@
   </aside>
 
   <section class="resultados">
+    <div class="tabs-categoria" id="tabs-categoria" hidden></div>
     <div class="barra-resultados">
       <button type="button" class="btn-abrir-filtros" id="btn-abrir-filtros">☰ Filtros</button>
       <span class="barra-resultados__conteo" id="conteo-resultados">0 productos</span>

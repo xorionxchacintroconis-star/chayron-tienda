@@ -6,10 +6,10 @@ function formatoPrecio(valor) {
   return 'COP $' + valor.toLocaleString('es-CO');
 }
 
-function linkWhatsapp(producto, talla) {
+function linkWhatsapp(producto, opcion) {
   const base = `https://wa.me/${CONFIG_TIENDA.whatsapp}`;
   let texto = `${CONFIG_TIENDA.mensajeWhatsapp} ${producto.nombre} (SKU: ${producto.sku})`;
-  if (talla) texto += ` - Talla ${talla}`;
+  if (opcion) texto += producto.categoria === 'zapatillas' ? ` - Talla ${opcion}` : ` - Color ${opcion}`;
   return `${base}?text=${encodeURIComponent(texto)}`;
 }
 
@@ -42,6 +42,9 @@ async function renderDetalle() {
   document.title = `${producto.nombre} | Chayron`;
 
   const imagenes = producto.imagenes && producto.imagenes.length ? producto.imagenes : [producto.imagen];
+  const esCalzado = producto.categoria === 'zapatillas';
+  const opciones = esCalzado ? producto.tallas : producto.colores;
+  const etiquetaOpcion = esCalzado ? 'Selecciona tu talla' : 'Selecciona tu color';
 
   cont.innerHTML = `
     <div class="detalle__galeria">
@@ -63,10 +66,11 @@ async function renderDetalle() {
       <h1 class="detalle__nombre">${producto.nombre}</h1>
       <div class="detalle__precio">${formatoPrecio(producto.precio)}</div>
 
-      <div class="detalle__tallas-label">Selecciona tu talla</div>
-      <div class="detalle__tallas" id="tallas-contenedor">
-        ${producto.tallas.map(t => `<button type="button" data-talla="${t}">${t}</button>`).join('')}
-      </div>
+      ${opciones.length ? `
+        <div class="detalle__tallas-label">${etiquetaOpcion}</div>
+        <div class="detalle__tallas" id="tallas-contenedor">
+          ${opciones.map((t, i) => `<button type="button" class="${esCalzado ? '' : 'color'}" data-talla="${t}" data-i="${i}">${t}</button>`).join('')}
+        </div>` : '<div id="tallas-contenedor"></div>'}
 
       ${producto.stock
         ? `<a class="btn-comprar" id="btn-comprar" href="${linkWhatsapp(producto)}" target="_blank">💬 Comprar por WhatsApp</a>`
@@ -75,16 +79,17 @@ async function renderDetalle() {
     </div>
   `;
 
+  let mostrarImagen = null;
   if (imagenes.length > 1) {
     let indiceActual = 0;
     const imgPrincipal = document.getElementById('imagen-principal');
     const miniaturas = cont.querySelectorAll('#miniaturas img');
 
-    function mostrarImagen(i) {
+    mostrarImagen = function (i) {
       indiceActual = (i + imagenes.length) % imagenes.length;
       imgPrincipal.src = imagenes[indiceActual];
       miniaturas.forEach((img, idx) => img.classList.toggle('activa', idx === indiceActual));
-    }
+    };
 
     miniaturas.forEach(img => {
       img.addEventListener('click', () => mostrarImagen(Number(img.dataset.index)));
@@ -102,6 +107,8 @@ async function renderDetalle() {
       botonesTalla.forEach(b => b.classList.remove('seleccionada'));
       btn.classList.add('seleccionada');
       tallaSeleccionada = btn.dataset.talla;
+      // En relojes, cada color tiene su foto (mismo orden)
+      if (!esCalzado && mostrarImagen && Number(btn.dataset.i) < imagenes.length) mostrarImagen(Number(btn.dataset.i));
       const btnComprar = document.getElementById('btn-comprar');
       if (btnComprar) btnComprar.href = linkWhatsapp(producto, tallaSeleccionada);
     });

@@ -677,3 +677,11 @@ body.sin-scroll { overflow: hidden; }
   .envios__tira img, .envios__video { height: 230px; }
   .footer { margin-top: 32px; }
 }
+
+/* ---------- Categorías (Zapatillas / Relojes) ---------- */
+.tabs-categoria { display:flex; gap:8px; margin:0 0 14px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.tabs-categoria[hidden] { display:none; }
+.tabs-categoria button { flex-shrink:0; padding:9px 18px; border:1px solid #d8dbe0; background:#fff; border-radius:999px; font-size:14px; font-weight:600; color:#222; cursor:pointer; }
+.tabs-categoria button.activo { background:#0b0c0f; color:#fff; border-color:#0b0c0f; }
+.header__nav a[hidden] { display:none; }
+.detalle__tallas button.color { min-width:auto; padding:10px 16px; }

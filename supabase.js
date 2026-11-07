@@ -22,8 +22,14 @@ function mapearProducto(fila) {
   else if (tallasDama.length) genero = 'mujer';
   else if (tallasCaballero.length) genero = 'hombre';
 
-  const tallas = [...new Set([...tallasDama, ...tallasCaballero, ...tallasSinGenero])]
-    .sort((a, b) => Number(a) - Number(b));
+  const categoria = (fila.categoria || 'zapatillas').toLowerCase();
+  const esCalzado = categoria === 'zapatillas';
+
+  // Zapatillas: tallas. Otros productos (relojes...): en tallas_sin_genero van los COLORES
+  const tallas = esCalzado
+    ? [...new Set([...tallasDama, ...tallasCaballero, ...tallasSinGenero])].sort((a, b) => Number(a) - Number(b))
+    : [];
+  const colores = esCalzado ? [] : tallasSinGenero;
 
   // Se marca como "Nuevo" si se creó en los últimos 14 días
   const creadoEn = fila.creado_en ? new Date(fila.creado_en) : null;
@@ -41,10 +47,11 @@ function mapearProducto(fila) {
     sku: fila.sku,
     nombre: fila.modelo,
     marca: fila.marca,
-    categoria: (fila.categoria || 'zapatillas').toLowerCase(),
+    categoria,
     genero,
     precio: Number(fila.precio_soles) || 0,
     tallas,
+    colores,
     nuevo: esNuevo,
     stock: !!fila.stock,
     imagen: fila.imagen_url,
