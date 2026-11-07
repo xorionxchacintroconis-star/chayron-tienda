@@ -29,7 +29,9 @@ function mapearProducto(fila) {
   const tallas = esCalzado
     ? [...new Set([...tallasDama, ...tallasCaballero, ...tallasSinGenero])].sort((a, b) => Number(a) - Number(b))
     : [];
-  const colores = esCalzado ? [] : tallasSinGenero;
+  // Colores: columna `colores` (zapatillas y otros). Los relojes antiguos los guardaban en tallas_sin_genero
+  const coloresPropios = dividirTallas(fila.colores);
+  const colores = coloresPropios.length ? coloresPropios : (esCalzado ? [] : tallasSinGenero);
 
   // Se marca como "Nuevo" si se creó en los últimos 14 días
   const creadoEn = fila.creado_en ? new Date(fila.creado_en) : null;

@@ -240,9 +240,8 @@ function tarjetaProducto(p) {
         <div class="tarjeta-producto__marca">${p.marca}</div>
         <div class="tarjeta-producto__nombre">${p.nombre}</div>
         <div class="tarjeta-producto__precio">${formatoPrecio(p.precio)}</div>
-        ${p.categoria === 'zapatillas'
-          ? `<div class="tarjeta-producto__tallas">Tallas: ${p.tallas.join(', ')}</div>`
-          : (p.colores.length > 1 ? `<div class="tarjeta-producto__tallas">${p.colores.length} colores</div>` : '')}
+        ${p.tallas.length ? `<div class="tarjeta-producto__tallas">Tallas: ${p.tallas.join(', ')}</div>` : ''}
+        ${p.colores.length > 1 ? `<div class="tarjeta-producto__tallas">${p.colores.length} colores</div>` : ''}
       </div>
     </a>
   `;

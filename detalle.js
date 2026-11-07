@@ -6,10 +6,11 @@ function formatoPrecio(valor) {
   return 'COP $' + valor.toLocaleString('es-CO');
 }
 
-function linkWhatsapp(producto, opcion) {
+function linkWhatsapp(producto, talla, color) {
   const base = `https://wa.me/${CONFIG_TIENDA.whatsapp}`;
   let texto = `${CONFIG_TIENDA.mensajeWhatsapp} ${producto.nombre} (SKU: ${producto.sku})`;
-  if (opcion) texto += producto.categoria === 'zapatillas' ? ` - Talla ${opcion}` : ` - Color ${opcion}`;
+  if (talla) texto += ` - Talla ${talla}`;
+  if (color) texto += ` - Color ${color}`;
   return `${base}?text=${encodeURIComponent(texto)}`;
 }
 
@@ -43,8 +44,8 @@ async function renderDetalle() {
 
   const imagenes = producto.imagenes && producto.imagenes.length ? producto.imagenes : [producto.imagen];
   const esCalzado = producto.categoria === 'zapatillas';
-  const opciones = esCalzado ? producto.tallas : producto.colores;
-  const etiquetaOpcion = esCalzado ? 'Selecciona tu talla' : 'Selecciona tu color';
+  const tallas = producto.tallas;
+  const colores = producto.colores;
 
   cont.innerHTML = `
     <div class="detalle__galeria">
@@ -66,11 +67,17 @@ async function renderDetalle() {
       <h1 class="detalle__nombre">${producto.nombre}</h1>
       <div class="detalle__precio">${formatoPrecio(producto.precio)}</div>
 
-      ${opciones.length ? `
-        <div class="detalle__tallas-label" id="etiqueta-opcion">${etiquetaOpcion}</div>
+      ${colores.length ? `
+        <div class="detalle__tallas-label" id="etiqueta-colores">Selecciona tu color</div>
+        <div class="detalle__tallas" id="colores-contenedor">
+          ${colores.map((c, i) => `<button type="button" class="color" data-color="${c}" data-i="${i}">${c}</button>`).join('')}
+        </div>` : ''}
+
+      ${tallas.length ? `
+        <div class="detalle__tallas-label" id="etiqueta-tallas">Selecciona tu talla</div>
         <div class="detalle__tallas" id="tallas-contenedor">
-          ${opciones.map((t, i) => `<button type="button" class="${esCalzado ? '' : 'color'}" data-talla="${t}" data-i="${i}">${t}</button>`).join('')}
-        </div>` : '<div id="tallas-contenedor"></div>'}
+          ${tallas.map(t => `<button type="button" data-talla="${t}">${t}</button>`).join('')}
+        </div>` : ''}
 
       <div class="detalle__compra">
         <div class="detalle__compra-precio">${formatoPrecio(producto.precio)}</div>
@@ -105,35 +112,52 @@ async function renderDetalle() {
 
   document.body.classList.add('pagina-detalle');
 
-  // Si no eligió talla/color, el primer toque lo lleva a elegir (el segundo toque sigue igual al WhatsApp)
-  let avisado = false;
-  const btnComprarEl = document.getElementById('btn-comprar');
-  if (btnComprarEl && opciones.length) {
-    btnComprarEl.addEventListener('click', (e) => {
-      if (!cont.querySelector('#tallas-contenedor button.seleccionada') && !avisado) {
-        e.preventDefault();
-        avisado = true;
-        const et = document.getElementById('etiqueta-opcion');
-        et.textContent = esCalzado ? '👇 Elige tu talla y vuelve a tocar el botón' : '👇 Elige tu color y vuelve a tocar el botón';
-        et.classList.add('detalle__aviso');
-        et.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-    });
-  }
-
+  // Selección de color (cambia la foto) y de talla
   let tallaSeleccionada = null;
+  let colorSeleccionado = null;
+  const actualizarEnlace = () => {
+    const btn = document.getElementById('btn-comprar');
+    if (btn) btn.href = linkWhatsapp(producto, tallaSeleccionada, colorSeleccionado);
+  };
   const botonesTalla = cont.querySelectorAll('#tallas-contenedor button');
   botonesTalla.forEach(btn => {
     btn.addEventListener('click', () => {
       botonesTalla.forEach(b => b.classList.remove('seleccionada'));
       btn.classList.add('seleccionada');
       tallaSeleccionada = btn.dataset.talla;
-      // En relojes, cada color tiene su foto (mismo orden)
-      if (!esCalzado && mostrarImagen && Number(btn.dataset.i) < imagenes.length) mostrarImagen(Number(btn.dataset.i));
-      const btnComprar = document.getElementById('btn-comprar');
-      if (btnComprar) btnComprar.href = linkWhatsapp(producto, tallaSeleccionada);
+      actualizarEnlace();
     });
   });
+  const botonesColor = cont.querySelectorAll('#colores-contenedor button');
+  botonesColor.forEach(btn => {
+    btn.addEventListener('click', () => {
+      botonesColor.forEach(b => b.classList.remove('seleccionada'));
+      btn.classList.add('seleccionada');
+      colorSeleccionado = btn.dataset.color;
+      // cada color tiene su foto (mismo orden)
+      if (mostrarImagen && Number(btn.dataset.i) < imagenes.length) mostrarImagen(Number(btn.dataset.i));
+      actualizarEnlace();
+    });
+  });
+
+  // Si falta elegir talla o color, el primer toque lo lleva a elegir (el segundo toque sigue al WhatsApp)
+  let avisado = false;
+  const btnComprarEl = document.getElementById('btn-comprar');
+  if (btnComprarEl && (tallas.length || colores.length)) {
+    btnComprarEl.addEventListener('click', (e) => {
+      const falta = [];
+      if (colores.length && !colorSeleccionado) falta.push('color');
+      if (tallas.length && !tallaSeleccionada) falta.push('talla');
+      if (falta.length && !avisado) {
+        e.preventDefault();
+        avisado = true;
+        const et = document.getElementById(falta[0] === 'color' ? 'etiqueta-colores' : 'etiqueta-tallas');
+        et.textContent = `👇 Elige tu ${falta.join(' y ')} y vuelve a tocar el botón`;
+        et.classList.add('detalle__aviso');
+        et.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+  }
 
   document.getElementById('btn-whatsapp-header').href = `https://wa.me/${CONFIG_TIENDA.whatsapp}`;
   document.getElementById('btn-whatsapp-footer').href = `https://wa.me/${CONFIG_TIENDA.whatsapp}`;

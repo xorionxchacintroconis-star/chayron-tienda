@@ -93,8 +93,8 @@
         </div>
       </div>
 
-      <div id="bloque-colores" class="oculto">
-        <label for="colores">Colores <small>(sepáralos con coma, en el mismo orden de las fotos)</small></label>
+      <div id="bloque-colores">
+        <label for="colores">Colores <small id="nota-colores">(opcional, con coma, en el mismo orden de las fotos)</small></label>
         <input type="text" id="colores" placeholder="Negro, Blanco, Verde, Azul, Celeste" />
       </div>
 
@@ -204,9 +204,8 @@ async function cargarMarcas() {
 function ajustarFormulario() {
   const reloj = $('categoria').value !== 'zapatillas';
   $('bloque-tallas').classList.toggle('oculto', reloj);
-  $('bloque-colores').classList.toggle('oculto', !reloj);
   $('modelo').placeholder = reloj ? 'Ej: Aqua Cronógrafo' : 'Ej: Nike P-6000 Azul y Plateado';
-  $('nota-fotos').textContent = reloj ? '(una foto por color, en el mismo orden de los colores; la primera es la portada)' : '(la primera será la portada)';
+  $('nota-fotos').textContent = '(la primera es la portada; si pones colores, una foto por color en el mismo orden)';
   cargarMarcas();
 }
 $('categoria').addEventListener('change', ajustarFormulario);
@@ -285,7 +284,7 @@ async function publicar() {
   const calzado = categoria === 'zapatillas';
   const dama = calzado ? tallasTexto($('tallas-dama').value) : '';
   const cab = calzado ? tallasTexto($('tallas-cab').value) : '';
-  const colores = calzado ? '' : coloresTexto($('colores').value);
+  const colores = coloresTexto($('colores').value);
   const fotos = fotosListas;
 
   if (!marca || !modelo) return mostrar('msg-pub', 'mal', 'Falta la marca o el modelo');
@@ -309,7 +308,10 @@ async function publicar() {
       headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify({
         sku, marca, modelo, categoria,
-        tallas_dama: dama || null, tallas_caballero: cab || null, tallas_sin_genero: colores || null,
+        tallas_dama: dama || null, tallas_caballero: cab || null,
+        // relojes: los colores van en la columna `colores`; zapatillas sin colores no la envían
+        tallas_sin_genero: null,
+        ...(colores ? { colores } : {}),
         precio_soles: precio, stock: true,
         imagen_url: urls[0], imagenes_url: urls.join(','),
       }),
