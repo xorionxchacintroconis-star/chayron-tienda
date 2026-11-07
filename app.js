@@ -29,13 +29,25 @@ function linkWhatsapp(producto) {
   return `${base}?text=${texto}`;
 }
 
-// ---------- Construcción de filtros dinámicos ----------
-function inicializarFiltros() {
-  const marcas = [...new Set(PRODUCTOS.map(p => p.marca))].sort();
-  const contMarcas = document.getElementById('filtro-marca');
-  contMarcas.innerHTML = marcas.map(m =>
+// Marcas del filtro: solo las de la categoría que se está viendo
+function pintarMarcas() {
+  const cont = document.getElementById('filtro-marca');
+  const marcas = [...new Set(PRODUCTOS.filter(p => !estado.categoria || p.categoria === estado.categoria).map(p => p.marca))].sort();
+  cont.innerHTML = marcas.map(m =>
     `<label><input type="checkbox" value="${m}" data-tipo="marca" /> ${m}</label>`
   ).join('');
+  cont.querySelectorAll('input').forEach(chk => {
+    chk.addEventListener('change', () => {
+      estado.marcas = [...cont.querySelectorAll('input:checked')].map(c => c.value);
+      estado.pagina = 1;
+      render();
+    });
+  });
+}
+
+// ---------- Construcción de filtros dinámicos ----------
+function inicializarFiltros() {
+  pintarMarcas();
 
   const tallas = [...new Set(PRODUCTOS.flatMap(p => p.tallas))].sort((a, b) => a - b);
   const contTallas = document.getElementById('filtro-talla');
@@ -55,14 +67,6 @@ function inicializarFiltros() {
   document.querySelectorAll('#filtro-genero input').forEach(chk => {
     chk.addEventListener('change', () => {
       estado.generos = [...document.querySelectorAll('#filtro-genero input:checked')].map(c => c.value);
-      estado.pagina = 1;
-      render();
-    });
-  });
-
-  contMarcas.querySelectorAll('input').forEach(chk => {
-    chk.addEventListener('change', () => {
-      estado.marcas = [...contMarcas.querySelectorAll('input:checked')].map(c => c.value);
       estado.pagina = 1;
       render();
     });
@@ -91,7 +95,8 @@ function inicializarFiltros() {
   });
 
   document.getElementById('btn-limpiar').addEventListener('click', () => {
-    estado = { busqueda: '', categoria: '', generos: [], marcas: [], tallas: [], precioMax: maxPrecio, soloNuevo: false, orden: 'relevancia', pagina: 1 };
+    estado = { busqueda: '', categoria: estado.categoria, generos: [], marcas: [], tallas: [], precioMax: maxPrecio, soloNuevo: false, orden: 'relevancia', pagina: 1 };
+    pintarMarcas();
     document.querySelectorAll('.filtros input[type="checkbox"]').forEach(c => c.checked = false);
     document.querySelectorAll('.filtro-tallas button').forEach(b => b.classList.remove('activo'));
     inputPrecio.value = maxPrecio;
@@ -144,6 +149,8 @@ const NOMBRES_CATEGORIA = { zapatillas: 'Zapatillas', relojes: 'Relojes', lentes
 function elegirCategoria(cat) {
   estado.categoria = cat;
   estado.pagina = 1;
+  estado.marcas = [];
+  pintarMarcas();
   // Género y talla solo tienen sentido para zapatillas
   const soloCalzado = !cat || cat === 'zapatillas';
   document.getElementById('bloque-genero').style.display = soloCalzado ? '' : 'none';
@@ -160,11 +167,12 @@ function elegirCategoria(cat) {
 function iniciarCategorias() {
   const cats = [...new Set(PRODUCTOS.map(p => p.categoria))];
   if (cats.length < 2) return;
-  const orden = ['zapatillas', ...cats.filter(c => c !== 'zapatillas').sort()];
+  const orden = ['zapatillas', ...cats.filter(c => c !== 'zapatillas').sort()].filter(c => cats.includes(c));
   const tabs = document.getElementById('tabs-categoria');
-  tabs.innerHTML = `<button type="button" data-cat="" class="activo">Todo</button>` +
-    orden.filter(c => cats.includes(c)).map(c =>
-      `<button type="button" data-cat="${c}">${NOMBRES_CATEGORIA[c] || c}</button>`).join('');
+  tabs.innerHTML = orden.map((c, i) =>
+      `<button type="button" data-cat="${c}" class="${i === 0 ? 'activo' : ''}">${NOMBRES_CATEGORIA[c] || c}</button>`).join('');
+  estado.categoria = orden[0];
+  pintarMarcas();
   tabs.hidden = false;
   tabs.addEventListener('click', e => {
     const b = e.target.closest('button[data-cat]');
@@ -284,7 +292,7 @@ function elegirDestacados() {
     lista = skus.map(s => PRODUCTOS.find(p => p.sku === s)).filter(Boolean);
   } else {
     // los más recientes (PRODUCTOS ya viene ordenado por fecha, nuevo primero)
-    lista = PRODUCTOS.filter(p => p.stock && p.imagen);
+    lista = PRODUCTOS.filter(p => p.stock && p.imagen && p.categoria === 'zapatillas');
   }
   return lista.slice(0, cantidad);
 }
