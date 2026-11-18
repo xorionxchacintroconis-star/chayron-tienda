@@ -251,20 +251,32 @@ function renderPaginacion(totalPaginas) {
   const cont = document.getElementById('paginacion');
   if (totalPaginas <= 1) { cont.innerHTML = ''; return; }
 
-  // Solo se muestran unas pocas páginas: 1 … 4 5 6 … 28
+  const total = obtenerProductosFiltrados().length;
   const p = estado.pagina;
+  const desde = (p - 1) * POR_PAGINA + 1;
+  const hasta = Math.min(p * POR_PAGINA, total);
+  const avance = Math.round((hasta / total) * 100);
+
+  // Solo se muestran unas pocas páginas: 1 … 4 5 6 … 28
   const nums = new Set([1, totalPaginas, p - 1, p, p + 1]);
   const visibles = [...nums].filter(n => n >= 1 && n <= totalPaginas).sort((a, b) => a - b);
 
-  let html = `<button ${p === 1 ? 'disabled' : ''} data-pagina="${p - 1}">‹</button>`;
+  let nav = `<button ${p === 1 ? 'disabled' : ''} data-pagina="${p - 1}">‹</button>`;
   let previo = 0;
   visibles.forEach(n => {
-    if (n - previo > 1) html += `<span class="paginacion__puntos">…</span>`;
-    html += `<button class="${n === p ? 'activo' : ''}" data-pagina="${n}">${n}</button>`;
+    if (n - previo > 1) nav += `<span class="paginacion__puntos">…</span>`;
+    nav += `<button class="${n === p ? 'activo' : ''}" data-pagina="${n}">${n}</button>`;
     previo = n;
   });
-  html += `<button ${p === totalPaginas ? 'disabled' : ''} data-pagina="${p + 1}">›</button>`;
-  cont.innerHTML = html;
+  nav += `<button ${p === totalPaginas ? 'disabled' : ''} data-pagina="${p + 1}">›</button>`;
+
+  cont.innerHTML = `
+    <div class="paginacion__info">Viendo <strong>${desde}–${hasta}</strong> de <strong>${total}</strong> modelos</div>
+    <div class="paginacion__barra"><span style="width:${avance}%"></span></div>
+    ${p < totalPaginas ? `<button type="button" class="paginacion__mas" data-pagina="${p + 1}">Ver más modelos →</button>` : ''}
+    <div class="paginacion__nums">${nav}</div>
+    <div class="paginacion__pagina">Página ${p} de ${totalPaginas}</div>
+  `;
 
   cont.querySelectorAll('button[data-pagina]').forEach(btn => {
     btn.addEventListener('click', () => {
